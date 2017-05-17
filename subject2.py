@@ -26,7 +26,9 @@ class CartPoleEnv:
 
         self.count = 0
 
-        return self.prev_obs
+        self.terminate = False
+
+        return self.prev_obs[1:]
 
     def obs_dim(self):
 
@@ -50,11 +52,13 @@ class CartPoleEnv:
         if self.count == 500 or self.obs[0] == 'done':
             self.terminate = True
 
-            # ternminate program
-            print('q')
-            sys.stdout.flush()
+        return self.obs[1:], self.terminate, self.reward
 
-        return self.obs, self.terminate, self.reward
+    def quit(self):
+        print('q')
+        sys.stdout.flush()
+
+
 
     
 
@@ -67,6 +71,8 @@ def test():
         act = random.choice([-1, 1])
         sys.stderr.write('step{} env.step(action={}) : {}\n'\
                          .format(env.count, act, env.step(action = act)))
+
+    env.quit()
 
 
 if __name__ == '__main__':

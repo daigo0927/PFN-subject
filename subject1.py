@@ -18,22 +18,24 @@ class EasyEnv:
     def reset(self):
 
         # sampling initial obserbation from Uniform[-1, 1]
-        self.prev_obs = random.uniform(-1, 1)
+        self.prev_obs = [random.uniform(-1, 1)]
 
         self.count = 0
 
-        return [self.prev_obs]
+        self.terminate = False
+
+        return self.prev_obs
 
     def obs_dim(self):
 
-        return 1
+        return len(self.prev_obs)
 
     def step(self, action):
 
         # sampling current obserbation
-        self.obs = random.uniform(-1, 1)
+        self.obs = [random.uniform(-1, 1)]
 
-        self.reward = action * self.prev_obs
+        self.reward = [action * prev for prev in self.prev_obs][0]
 
         self.prev_obs = self.obs
 
@@ -41,7 +43,7 @@ class EasyEnv:
         if self.count == 10:
             self.terminate = True
 
-        return [self.obs], self.terminate, self.reward
+        return self.obs, self.terminate, self.reward
 
 
 def test():

@@ -35,12 +35,12 @@ def test():
     print('obs_dim : {}, initial-param : {}'.format(obs_dim, init_param))
     model = LinearModel(initial_param = init_param)
 
-    act = model.action(obs = [env.prev_obs])
+    act = model.action(obs = env.prev_obs)
     print('model parameter doesn\'t updated')
     
     while not env.terminate:
-        print('obs , teminate , reward :{}'.format(env.step(action = act)))
-        act = model.action(obs = [env.obs])
+        print('obs , terminate , reward :{}'.format(env.step(action = act)))
+        act = model.action(obs = env.obs)
         print('next action {}'.format(act))
         
 
