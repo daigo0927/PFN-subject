@@ -48,6 +48,11 @@ def evaluate(param):
 
     score = sum(results)
     sys.stderr.write('trained parameter score : {}/100\n'.format(score))
+    
+    if score >= 95:
+        param = [str(p) + '\n' for p in param]
+        with open('./param.txt', 'w') as f:
+            f.writelines(param)
 
     env.quit()
     
@@ -56,3 +61,4 @@ if __name__ == '__main__':
     
     param_trained = train()
     evaluate(param = param_trained)
+    
