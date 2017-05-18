@@ -12,7 +12,7 @@ from subject4 import CrossEntropyMethod
 def train():
     env = CartPoleEnv()
     param = CrossEntropyMethod(env = env)
-    sys.stderr.write('final parameter {}'.format(param))
+    sys.stderr.write('final parameter {}\n'.format(param))
     # env.quit()
     return param
 
