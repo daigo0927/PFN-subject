@@ -20,7 +20,7 @@ def train_ex(env, N = 100, rho = 0.1):
     sys.stderr.write('final parameter {}\n'.format(param))
     sys.stderr.write('reward result shape : {}\n'.format(reward.shape))
     
-    return param, reward
+    return reward
 
 def CEM_ex(env, N = 100, rho = 0.1):
 
@@ -34,7 +34,7 @@ def CEM_ex(env, N = 100, rho = 0.1):
 
     tops = int(N*rho)
 
-    top_rewards = np.empty((0, tops))
+    top_rewards = []
 
     while not convergence:
         Simu_record = []
@@ -63,7 +63,8 @@ def CEM_ex(env, N = 100, rho = 0.1):
         
         top_rew = [rec[0] for rec in top_record]
         top_reward_mean = sum(top_rew)/tops
-        top_rewards = np.append(top_rewards, np.array([top_rew]), axis = 0)
+        top_rewards.append(top_reward_mean)
+        # top_rewards = np.append(top_rewards, np.array([top_rew]), axis = 0)
         
         # sys.stderr.write('top {}'.format(top_record))
         env.reset()
@@ -82,23 +83,75 @@ def CEM_ex(env, N = 100, rho = 0.1):
         if count == 20:
             convergence = True
             
-    return param, top_rewards
+    return param, np.array(top_rewards)
+
+class CPEnv_ex(CartPoleEnv):
+
+    def __init__(self,
+                 obs_noise = 0,
+                 obs_drop = 0,
+                 obs_complete = False):
+        super().__init__()
+        self.obs_noise = obs_noise
+        self.obs_drop = obs_drop
+        self.prev_obs_ex = None
+        self.obs_complete = obs_complete
+
+    def reset(self):
+        self.prev_obs_ex = super().reset()
+        return self.prev_obs_ex
+
+    def step(self, action):
+
+        obs, terminate, reward = super().step(action = action)
+        # sys.stderr.write('{},{},{}'.format(obs, terminate, reward))
+        obs = np.array(obs, dtype = float)
+
+        # noise term
+        obs = obs + np.random.normal(0, self.obs_noise, self.obs_dim())
+
+        # drop term
+        drop_idx = np.random.choice([0,1],
+                                    p = [self.obs_drop, 1-self.obs_drop],
+                                    size = obs.shape[0])
+        obs = obs * drop_idx
+
+        # complete term
+        if self.obs_complete:
+            # complete dropped value(0) with previous obs
+            obs[drop_idx == 0] = self.prev_obs_ex[drop_idx == 0]
+
+        self.prev_obs_ex = obs
+
+        return obs, terminate, reward # super().step(action = action)
+        
+
+def plot_witherror(ys, label):
+    x = range(ys.shape[1])
+    y_mean = np.mean(ys, axis = 0)
+    error = np.std(ys, axis = 0)
+    plt.errorbar(x, y_mean, error, label = label)
+
 
 # experiment for effect of N, rho
-def exp1():
+def exp1(env = CartPoleEnv()):
 
     Ns = [10, 50, 100]
 
     fig = plt.figure(figsize = (12,4))
+    fig.subplots_adjust(bottom = 0.15)
     
     ax1 = fig.add_subplot(121)
     plt.xlabel('iteration')
     plt.ylabel('reward')
     plt.title('N = {}, rho = 0.1'.format(Ns))
     for n in Ns:
-        _, reward = train_ex(env = CartPoleEnv(),
-                          N = n, rho = 0.1)
-        plt.plot(np.mean(reward, axis = 1), label = 'N = {}'.format(n))
+        rewards = np.array([train_ex(env = env,
+                                     N = n,
+                                     rho = 0.1)
+                            for _ in range(2)])
+        plot_witherror(rewards, label = 'N = {}'.format(n))
+        # plt.plot(np.mean(reward, axis = 1), label = 'N = {}'.format(n))
     plt.legend()
 
     rhos = [0.1, 0.3, 0.5]
@@ -108,19 +161,51 @@ def exp1():
     plt.ylabel('reward')
     plt.title('N = 100, rho = {}'.format(rhos))
     for rho in rhos:
-        _, reward = train_ex(env = CartPoleEnv(),
-                             N = 100, rho = rho)
-        plt.plot(np.mean(reward, axis = 1), label = 'rho = {}'.format(rho))
+        rewards = np.array([train_ex(env = env,
+                                     N = 100,
+                                     rho = rho)
+                            for _ in range(2)])
+        plot_witherror(rewards, label = 'rho = {}'.format(rho))
+        # plt.plot(np.mean(reward, axis = 1), label = 'rho = {}'.format(rho))
     plt.legend()
 
     with open('./tmp.png', 'wb') as f:
         plt.savefig(f)
 
+def exp2():
+
+    env = CPEnv_ex()
+    
+    drops = [0, 0.2, 0.5]
+
+    fig = plt.figure(figsize = (12,4))
+    fig.subplots_adjust(bottom = 0.15)
+    
+    ax1 = fig.add_subplot(121)
+    plt.xlabel('iteration')
+    plt.ylabel('reward')
+    plt.title('obserbation drop (N = 100, rho = 0.1)')
+    for drop in drops:
+        rewards = np.array([train_ex(env = env,
+                                     N = n,
+                                     rho = 0.1)
+                            for _ in range(2)])
+        plot_witherror(rewards, label = 'N = {}'.format(n))
+        # plt.plot(np.mean(reward, axis = 1), label = 'N = {}'.format(n))
+    plt.legend()
+    
+    
+    pass
+
+    
+
 if __name__ == '__main__':
 
-    exp1()
+    exp1(env = CPEnv_ex())
+    # exp2()
 
-    print('q')
-    sys.stdout.flush()
+    CPEnv_ex().quit()
+    # print('q')
+    # sys.stdout.flush()
     # evaluate(param = param_trained)
     
