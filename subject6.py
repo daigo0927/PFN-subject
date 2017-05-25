@@ -98,7 +98,7 @@ class CPEnv_ex(CartPoleEnv):
         self.obs_complete = obs_complete
 
     def reset(self):
-        self.prev_obs_ex = super().reset()
+        self.prev_obs_ex = np.array(super().reset(), dtype = float)
         return self.prev_obs_ex
 
     def step(self, action):
@@ -108,7 +108,7 @@ class CPEnv_ex(CartPoleEnv):
         obs = np.array(obs, dtype = float)
 
         # noise term
-        obs = obs + np.random.normal(0, self.obs_noise, self.obs_dim())
+        obs = obs * np.random.normal(1, self.obs_noise, obs.shape[0])
 
         # drop term
         drop_idx = np.random.choice([0,1],
@@ -127,13 +127,13 @@ class CPEnv_ex(CartPoleEnv):
         
 
 def plot_witherror(ys, label):
-    x = range(ys.shape[1])
+    x = range(ys.shape[-1])
     y_mean = np.mean(ys, axis = 0)
     error = np.std(ys, axis = 0)
     plt.errorbar(x, y_mean, error, label = label)
 
 
-# experiment for effect of N, rho
+# experiment for hyper-parameter(N, rho)
 def exp1(env = CartPoleEnv()):
 
     Ns = [10, 50, 100]
@@ -164,19 +164,18 @@ def exp1(env = CartPoleEnv()):
         rewards = np.array([train_ex(env = env,
                                      N = 100,
                                      rho = rho)
-                            for _ in range(2)])
+                            for _ in range(10)])
         plot_witherror(rewards, label = 'rho = {}'.format(rho))
         # plt.plot(np.mean(reward, axis = 1), label = 'rho = {}'.format(rho))
     plt.legend()
 
-    with open('./tmp.png', 'wb') as f:
+    with open('./tmp1.png', 'wb') as f:
         plt.savefig(f)
 
+# experiment for partially missing obserbation
 def exp2():
 
-    env = CPEnv_ex()
-    
-    drops = [0, 0.2, 0.5]
+    drops = [0, 0.1, 0.3]
 
     fig = plt.figure(figsize = (12,4))
     fig.subplots_adjust(bottom = 0.15)
@@ -186,26 +185,59 @@ def exp2():
     plt.ylabel('reward')
     plt.title('obserbation drop (N = 100, rho = 0.1)')
     for drop in drops:
-        rewards = np.array([train_ex(env = env,
-                                     N = n,
+        rewards = np.array([train_ex(env = CPEnv_ex(obs_drop = drop),
+                                     N = 100,
                                      rho = 0.1)
-                            for _ in range(2)])
-        plot_witherror(rewards, label = 'N = {}'.format(n))
+                            for _ in range(1)])
+        plot_witherror(rewards, label = 'drop = {}'.format(drop))
         # plt.plot(np.mean(reward, axis = 1), label = 'N = {}'.format(n))
     plt.legend()
-    
-    
-    pass
 
+    ax2 = fig.add_subplot(122)
+    plt.xlabel('iteration')
+    plt.ylabel('reward')
+    plt.title('obsebation reused (N = 100, rho = 0.1)')
+    for drop in drops:
+        rewards = np.array([train_ex(env = CPEnv_ex(obs_drop = drop,
+                                                    obs_complete = True),
+                                     N = 100,
+                                     rho = 0.1)
+                            for _ in range(1)])
+        plot_witherror(rewards, label = 'drop = {}'.format(drop))
+
+    plt.legend()
+
+    with open('./tmp2.png', 'wb') as f:
+        plt.savefig(f)
+
+# experiment for noisy obserbation
+def exp3():
+
+    noises = [0, 0.1, 0.3]
+
+    plt.figure()
+    plt.xlabel('iteration')
+    plt.ylabel('reward')
+    plt.title('noisy obserbation')
+    for noise in noises:
+        rewards = np.array([train_ex(env = CPEnv_ex(obs_noise = noise),
+                                     N = 100,
+                                     rho = 0.1)
+                            for _ in range(1)])
+        plot_witherror(rewards, label = 'noise(std) = {}'.format(noise))
+
+    plt.legend()
+
+    with open('./tmp3.png', 'wb') as f:
+        plt.savefig(f)
     
 
 if __name__ == '__main__':
 
-    exp1(env = CPEnv_ex())
-    # exp2()
+    # exp1(env = CPEnv_ex())
+    exp2()
+    exp3()
 
     CPEnv_ex().quit()
-    # print('q')
-    # sys.stdout.flush()
-    # evaluate(param = param_trained)
+
     
