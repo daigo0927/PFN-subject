@@ -228,7 +228,7 @@ def exp3():
 
 if __name__ == '__main__':
 
-    # exp1(env = CPEnv_ex())
+    exp1(env = CPEnv_ex())
     exp2()
     exp3()
 
