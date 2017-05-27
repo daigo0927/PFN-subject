@@ -1,0 +1,63 @@
+\documentclass{jsarticle}
+\usepackage[dvipdfmx]{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{bm}
+\title{\vspace{-4cm}インターン課題6レポート}
+\author{廣岡大吾}
+
+\makeatletter
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+\@addtoreset{figure}{section}
+\renewcommand{\thetable}{\thesection.\arabic{table}}
+\@addtoreset{table}{section}
+\renewcommand{\theequation}{\thesection.\arabic{equation}}
+\@addtoreset{equation}{section}
+
+\newcommand{\argmax}{\mathop{\rm arg~max}\limits}
+
+\begin{document}
+\maketitle
+\vspace{-1cm}
+\section{課題}
+課題5までの実装に変更を加えた場合にどのような挙動をするかを考える．
+\subsection{CEMにおけるハイパーパラメータを変更した場合の挙動}
+今回用いたCrossEntropyMethodにおいてはハイパーパラメータを設定する必要がある．学習におけるエージェントの数$N$，エピソードを終えた後にどこまで上位のエージェントのパラメータを回収するかを決定する値$\rho$が存在し，課題１から５までは$N = 100, \rho = 0.1$としていた．これらの値を変更し，それぞれの値について10回ずつ学習を行なった．学習時の上位エージェントの平均獲得報酬の推移を図\ref{fig:fig1}に示す．図\ref{fig:fig1}において，$N = 10, 50, 100\text{として}\rho = 0.1$で固定した場合を左図，$N = 100\text{で固定し},\rho = 01, 0.3, 0.5$とした場合を右図に示す．図\ref{fig:fig1}左図より，$N＝50$の場合がもっとも高速に学習できていることがわかる．$N＝10$の場合はエージェントが少なく，学習が安定せずサンプル効率が悪いことがわかる．図\ref{fig:fig1}右図より，エージェントの回収率$\rho$を大きくしすぎると，獲得報酬の少ないエージェントの影響を受けてサンプル効率が悪くなってしまうことがわかる．
+\begin{figure}[htbp]
+  \begin{center}
+    \includegraphics[clip,width=15.0cm]{./res1.png}
+    \caption{ハイパーパラメータを変更した際の挙動}
+    \label{fig:fig1}
+  \end{center}
+\end{figure}
+
+    
+\subsection{環境情報に対する部分観測性を仮定した場合の挙動}
+実機の環境では，環境の観測情報が欠損したり遅延して得られる場合が想定される．ここでは観測情報のそれぞれの値が確率的に0となってしまう場合を考える．観測情報の各値が0となる確率を$0.1, 0.3, 0.5$と変えて10回ずつ学習を行なった．また，こうした状況に対応するために，１ステップ前の観測情報を保存しておき，観測情報が0となった場合に前ステップの値を代用し学習を行なった．それぞれの学習結果を図\ref{fig:fig2}の左右に示す．図\ref{fig:fig2}左図より，学習は進むものの観測情報が落ちるほど学習が難しくなることがわかる．また図\ref{fig:fig2}右図より，前ステップの観測情報を再利用する方法では今回の部分観測性に対して明確な有用性は確認できなかった．
+\begin{figure}[htbp]
+  \begin{center}
+    \includegraphics[clip,width=15.0cm]{./res2.png}
+    \caption{観測情報の各値が確率的に0となってしまう場合の学習結果}
+    \label{fig:fig2}
+  \end{center}
+\end{figure}
+
+\subsection{環境情報の観測時に農事を仮定した場合の挙動}
+実際の環境では，環境を観測する際に観測ノイズが発生することが考えられる．観測情報の正規分布によるノイズを仮定した場合について，正規分布の標準分布パラメータを$0, 0.2, 0.5$と変化させ10回ずつ学習を行なった．この場合の学習結果を図\ref{fig:fig3}に示す．今回扱うCartPoleではそれぞれの観測情報のスケールが異なるため，式\ref{eq:eq1}, \ref{eq:eq2}によってノイズを付加した．図\ref{fig:fig3}より，今回設定した程度のノイズでは学習結果に大きな悪影響をおyボスことはなかった．これはCartPoleの環境や今回エージェントとして用いた線形モデルがシンプルなものであったからだと考えられる．さらに複雑な環境やモデルではこの程度のノイズでも影響を及ぼす可能性がある．
+\begin{align}
+  \text{obs}_{\text{noised}} = \text{obs} \times \epsilon
+  \label{eq:eq1}\\
+  \epsilon \sim \mathcal{N}(1, \sigma^{2})
+  \label{eq:eq2}
+\end{align}
+
+
+\begin{figure}[htbp]
+  \begin{center}
+    \includegraphics[clip,width=8.0cm]{./res3.png}
+    \caption{観測のノイズを仮定した場合の学習結果}
+    \label{fig:fig3}
+  \end{center}
+\end{figure}
+
+\end{document}
